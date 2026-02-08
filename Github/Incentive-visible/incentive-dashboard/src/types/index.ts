@@ -37,3 +37,15 @@ export interface NewEntry {
   incentiveTarget: string;
   month: string;
 }
+
+export type ViewMode = "monthly" | "yearly";
+
+export interface MonthlyData {
+  month: string;        // YYYY-MM format
+  monthLabel: string;   // Display label (e.g., "1月")
+  billing: number;
+  cost: number;
+  profit: number;
+  incentive: number;
+  count: number;
+}

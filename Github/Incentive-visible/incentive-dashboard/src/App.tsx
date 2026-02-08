@@ -21,6 +21,7 @@ import { GoalSummary } from "./components/cards/GoalSummary";
 import { BarChartSection } from "./components/charts/BarChartSection";
 import { PieChartSection } from "./components/charts/PieChartSection";
 import { MarginBars } from "./components/charts/MarginBars";
+import { MonthlyTrendChart } from "./components/charts/MonthlyTrendChart";
 
 // Table components
 import { DetailTable } from "./components/table/DetailTable";
@@ -35,12 +36,21 @@ import "./styles/animations.css";
 function App() {
   const {
     filteredData,
+    yearFilteredData,
     goals,
     setGoals,
     selectedSales,
     setSelectedSales,
     salesPersons,
     stats,
+    monthlyTimeSeries,
+    viewMode,
+    setViewMode,
+    selectedYear,
+    setSelectedYear,
+    selectedMonth,
+    setSelectedMonth,
+    availableYears,
     addEntry,
     deleteEntry,
   } = useIncentiveData();
@@ -57,7 +67,7 @@ function App() {
     billing: "",
     cost: "",
     incentiveTarget: "",
-    month: "2025-12",
+    month: selectedMonth,
   });
 
   // Chart data
@@ -112,7 +122,7 @@ function App() {
       billing: "",
       cost: "",
       incentiveTarget: "",
-      month: "2025-12",
+      month: selectedMonth,
     });
     setShowAddModal(false);
   };
@@ -206,6 +216,13 @@ function App() {
         onSelectSales={setSelectedSales}
         onOpenGoalModal={handleOpenGoalModal}
         onOpenAddModal={() => setShowAddModal(true)}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        selectedYear={selectedYear}
+        onYearChange={setSelectedYear}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        availableYears={availableYears}
       />
 
       {/* Main content */}
@@ -219,7 +236,12 @@ function App() {
         }}
       >
         {/* Goal Summary - Prominent display at top */}
-        <GoalSummary goals={goals} />
+        <GoalSummary goals={goals} viewMode={viewMode} />
+
+        {/* Monthly Trend Chart - Only in yearly view */}
+        {viewMode === "yearly" && (
+          <MonthlyTrendChart data={monthlyTimeSeries} selectedYear={selectedYear} />
+        )}
 
         {/* KPI Cards */}
         <div
@@ -325,20 +347,20 @@ function App() {
           >
             <GoalRing
               current={stats.totalBilling}
-              goal={goals.billing}
-              label="売上目標"
+              goal={viewMode === "yearly" ? goals.billing * 12 : goals.billing}
+              label={viewMode === "yearly" ? "年間売上目標" : "売上目標"}
               color={COLORS.sun1}
             />
             <GoalRing
               current={stats.totalProfit}
-              goal={goals.profit}
-              label="粗利目標"
+              goal={viewMode === "yearly" ? goals.profit * 12 : goals.profit}
+              label={viewMode === "yearly" ? "年間粗利目標" : "粗利目標"}
               color={COLORS.space1}
             />
             <GoalRing
               current={stats.totalIncentive}
-              goal={goals.incentive}
-              label="インセン目標"
+              goal={viewMode === "yearly" ? goals.incentive * 12 : goals.incentive}
+              label={viewMode === "yearly" ? "年間インセン目標" : "インセン目標"}
               color={COLORS.orbit1}
             />
           </div>
@@ -360,8 +382,8 @@ function App() {
         {/* Margin Bars */}
         <MarginBars data={marginData} />
 
-        {/* Monthly Incentive Table */}
-        <MonthlyIncentiveTable data={filteredData} />
+        {/* Monthly Incentive Table - Show yearly data in yearly view */}
+        <MonthlyIncentiveTable data={yearFilteredData} />
 
         {/* Detail Table */}
         <DetailTable data={filteredData} onDelete={deleteEntry} />

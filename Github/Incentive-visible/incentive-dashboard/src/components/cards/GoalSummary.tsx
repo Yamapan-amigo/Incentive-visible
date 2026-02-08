@@ -2,10 +2,11 @@ import React, { memo } from "react";
 import { COLORS } from "../../constants/colors";
 import { FONTS, ANIMATION_DELAYS, sectionHeaderStyle, sectionSubtitleStyle } from "../../constants/styles";
 import { fmt } from "../../utils/format";
-import type { Goals } from "../../types";
+import type { Goals, ViewMode } from "../../types";
 
 interface GoalSummaryProps {
   goals: Goals;
+  viewMode?: ViewMode;
 }
 
 interface GoalItemProps {
@@ -58,7 +59,10 @@ const GoalItem: React.FC<GoalItemProps> = memo(({ label, value, icon, color }) =
 
 GoalItem.displayName = "GoalItem";
 
-export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals }) => {
+export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals, viewMode = "monthly" }) => {
+  const isYearly = viewMode === "yearly";
+  const multiplier = isYearly ? 12 : 1;
+
   return (
     <div
       style={{
@@ -100,7 +104,7 @@ export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals }) => {
           >
             🎯
           </span>
-          月次目標
+          {isYearly ? "年間目標" : "月次目標"}
         </h2>
         <span
           style={{
@@ -108,7 +112,7 @@ export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals }) => {
             letterSpacing: "0.05em",
           }}
         >
-          MONTHLY GOALS
+          {isYearly ? "YEARLY GOALS" : "MONTHLY GOALS"}
         </span>
       </div>
 
@@ -121,20 +125,20 @@ export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals }) => {
         }}
       >
         <GoalItem
-          label="売上目標"
-          value={goals.billing}
+          label={isYearly ? "年間売上目標" : "売上目標"}
+          value={goals.billing * multiplier}
           icon="☀️"
           color={COLORS.sun1}
         />
         <GoalItem
-          label="粗利目標"
-          value={goals.profit}
+          label={isYearly ? "年間粗利目標" : "粗利目標"}
+          value={goals.profit * multiplier}
           icon="🔥"
           color={COLORS.space1}
         />
         <GoalItem
-          label="インセンティブ目標"
-          value={goals.incentive}
+          label={isYearly ? "年間インセン目標" : "インセン目標"}
+          value={goals.incentive * multiplier}
           icon="💫"
           color={COLORS.orbit1}
         />
