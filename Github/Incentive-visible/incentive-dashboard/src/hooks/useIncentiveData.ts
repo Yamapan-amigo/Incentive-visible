@@ -166,6 +166,13 @@ export function useIncentiveData() {
     setData((prev) => [...prev, { ...entry, id: Date.now() }]);
   };
 
+  // Update existing entry
+  const updateEntry = (id: number, entry: Omit<IncentiveEntry, "id">) => {
+    setData((prev) =>
+      prev.map((d) => (d.id === id ? { ...entry, id } : d))
+    );
+  };
+
   // Delete entry
   const deleteEntry = (id: number) => {
     setData((prev) => prev.filter((d) => d.id !== id));
@@ -192,6 +199,7 @@ export function useIncentiveData() {
     setSelectedMonth,
     availableYears,
     addEntry,
+    updateEntry,
     deleteEntry,
   };
 }

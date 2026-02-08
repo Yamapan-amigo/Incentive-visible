@@ -6,6 +6,7 @@ import type { IncentiveEntry } from "../../types";
 
 interface DetailTableProps {
   data: IncentiveEntry[];
+  onEdit: (entry: IncentiveEntry) => void;
   onDelete: (id: number) => void;
 }
 
@@ -14,7 +15,7 @@ const getMarginColorFromRatio = (margin: number): string => {
   return getMarginColor(margin * 100);
 };
 
-export const DetailTable: React.FC<DetailTableProps> = memo(({ data, onDelete }) => {
+export const DetailTable: React.FC<DetailTableProps> = memo(({ data, onEdit, onDelete }) => {
   // Memoize computed row data
   const rowData = useMemo(() =>
     data.map(d => ({
@@ -195,7 +196,28 @@ export const DetailTable: React.FC<DetailTableProps> = memo(({ data, onDelete })
                   >
                     {fmt(d.incentiveTarget)}
                   </td>
-                  <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                  <td style={{ padding: "12px 14px", textAlign: "center", whiteSpace: "nowrap" }}>
+                    <button
+                      onClick={() => onEdit(d)}
+                      title="編集"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: COLORS.textDim,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        padding: 4,
+                        marginRight: 4,
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color = COLORS.space1)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = COLORS.textDim)
+                      }
+                    >
+                      ✎
+                    </button>
                     <button
                       onClick={() => onDelete(d.id)}
                       title="削除"

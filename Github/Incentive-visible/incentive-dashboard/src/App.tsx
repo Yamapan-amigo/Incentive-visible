@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { COLORS } from "./constants/colors";
 import { fmt, pct } from "./utils/format";
 import { useIncentiveData } from "./hooks/useIncentiveData";
-import type { NewEntry, Goals } from "./types";
+import type { NewEntry, Goals, IncentiveEntry } from "./types";
 
 // Layout components
 import { CursorGlow } from "./components/layout/CursorGlow";
@@ -26,9 +26,11 @@ import { MonthlyTrendChart } from "./components/charts/MonthlyTrendChart";
 // Table components
 import { DetailTable } from "./components/table/DetailTable";
 import { MonthlyIncentiveTable } from "./components/table/MonthlyIncentiveTable";
+import { StaffYearlySummary } from "./components/table/StaffYearlySummary";
 
 // Modal components
 import { AddDataModal } from "./components/modals/AddDataModal";
+import { EditDataModal } from "./components/modals/EditDataModal";
 import { GoalModal } from "./components/modals/GoalModal";
 
 import "./styles/animations.css";
@@ -52,11 +54,14 @@ function App() {
     setSelectedMonth,
     availableYears,
     addEntry,
+    updateEntry,
     deleteEntry,
   } = useIncentiveData();
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<IncentiveEntry | null>(null);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [tempGoals, setTempGoals] = useState<Goals>(goals);
   const [newEntry, setNewEntry] = useState<NewEntry>({
@@ -135,6 +140,16 @@ function App() {
   const handleSaveGoals = () => {
     setGoals(tempGoals);
     setShowGoalModal(false);
+  };
+
+  const handleOpenEditModal = (entry: IncentiveEntry) => {
+    setEditingEntry(entry);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingEntry(null);
   };
 
   return (
@@ -379,14 +394,18 @@ function App() {
           <PieChartSection data={pieChartData} />
         </div>
 
-        {/* Margin Bars */}
-        <MarginBars data={marginData} />
+        {/* Staff Summary (yearly) or Margin Bars (monthly) */}
+        {viewMode === "yearly" ? (
+          <StaffYearlySummary data={yearFilteredData} selectedYear={selectedYear} />
+        ) : (
+          <MarginBars data={marginData} />
+        )}
 
         {/* Monthly Incentive Table - Show yearly data in yearly view */}
         <MonthlyIncentiveTable data={yearFilteredData} />
 
         {/* Detail Table */}
-        <DetailTable data={filteredData} onDelete={deleteEntry} />
+        <DetailTable data={filteredData} onEdit={handleOpenEditModal} onDelete={deleteEntry} />
 
         {/* Footer */}
         <div
@@ -417,6 +436,13 @@ function App() {
         tempGoals={tempGoals}
         setTempGoals={setTempGoals}
         onSave={handleSaveGoals}
+      />
+
+      <EditDataModal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        entry={editingEntry}
+        onSave={updateEntry}
       />
     </div>
   );
