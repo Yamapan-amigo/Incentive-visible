@@ -1,0 +1,143 @@
+import React from "react";
+import { COLORS } from "../../constants/colors";
+import { SunOrb } from "../decorations/SunOrb";
+
+interface HeaderProps {
+  salesPersons: string[];
+  selectedSales: string;
+  onSelectSales: (sales: string) => void;
+  onOpenGoalModal: () => void;
+  onOpenAddModal: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  salesPersons,
+  selectedSales,
+  onSelectSales,
+  onOpenGoalModal,
+  onOpenAddModal,
+}) => (
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+      padding: "24px 40px 18px",
+      borderBottom: `1px solid ${COLORS.border}`,
+      background:
+        "linear-gradient(180deg, rgba(253,230,138,0.06) 0%, transparent 100%)",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 14,
+      }}
+    >
+      {/* Logo and title */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <SunOrb size={36} />
+        <div>
+          <h1
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              margin: 0,
+            }}
+          >
+            インセンティブ ダッシュボード
+          </h1>
+          <p
+            style={{
+              fontSize: 11,
+              color: COLORS.textMuted,
+              fontWeight: 500,
+              letterSpacing: "0.04em",
+              margin: 0,
+            }}
+          >
+            SOLAR INCENTIVE TRACKER — 2025年12月
+          </p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div
+        style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}
+      >
+        {/* Sales filter */}
+        <div
+          style={{
+            display: "flex",
+            background: COLORS.card,
+            borderRadius: 12,
+            border: `1px solid ${COLORS.border}`,
+            overflow: "hidden",
+            boxShadow: COLORS.shadow,
+          }}
+        >
+          {["all", ...salesPersons].map((v, i) => (
+            <button
+              key={v}
+              onClick={() => onSelectSales(v)}
+              style={{
+                padding: "7px 16px",
+                fontSize: 12,
+                fontWeight: 600,
+                border: "none",
+                borderLeft: i > 0 ? `1px solid ${COLORS.border}` : "none",
+                cursor: "pointer",
+                background: selectedSales === v ? COLORS.gradSun : "transparent",
+                color: selectedSales === v ? "#fff" : COLORS.textMuted,
+                fontFamily: "inherit",
+                transition: "all 0.2s",
+              }}
+            >
+              {v === "all" ? "全体" : v}
+            </button>
+          ))}
+        </div>
+
+        {/* Goal button */}
+        <button
+          onClick={onOpenGoalModal}
+          style={{
+            padding: "7px 16px",
+            fontSize: 12,
+            fontWeight: 600,
+            border: `1px solid ${COLORS.borderWarm}`,
+            borderRadius: 12,
+            cursor: "pointer",
+            background: "rgba(251,146,60,0.06)",
+            color: COLORS.sun1,
+            fontFamily: "inherit",
+          }}
+        >
+          🎯 目標設定
+        </button>
+
+        {/* Add data button */}
+        <button
+          onClick={onOpenAddModal}
+          style={{
+            padding: "7px 20px",
+            fontSize: 12,
+            fontWeight: 700,
+            border: "none",
+            borderRadius: 12,
+            cursor: "pointer",
+            background: COLORS.gradSun,
+            color: "#fff",
+            fontFamily: "inherit",
+            boxShadow: "0 2px 12px rgba(251,146,60,0.25)",
+          }}
+        >
+          ＋ データ追加
+        </button>
+      </div>
+    </div>
+  </div>
+);
