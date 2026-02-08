@@ -1,5 +1,7 @@
-import React from "react";
+import React, { memo } from "react";
 import { COLORS } from "../../constants/colors";
+import { createCardStyle, FONTS, ANIMATION_DELAYS } from "../../constants/styles";
+import { getMarginColor, MARGIN_THRESHOLDS } from "../../utils/format";
 
 interface MarginData {
   name: string;
@@ -10,24 +12,14 @@ interface MarginBarsProps {
   data: MarginData[];
 }
 
-const getMarginColor = (rate: number): string => {
-  if (rate > 15) return COLORS.orbit2;
-  if (rate > 8) return COLORS.sun2;
-  return COLORS.sun3;
-};
+const MARGIN_LEGEND = [
+  { label: `${MARGIN_THRESHOLDS.HIGH}%以上`, color: COLORS.orbit2 },
+  { label: `${MARGIN_THRESHOLDS.MEDIUM}〜${MARGIN_THRESHOLDS.HIGH}%`, color: COLORS.sun2 },
+  { label: `${MARGIN_THRESHOLDS.MEDIUM}%未満`, color: COLORS.sun3 },
+] as const;
 
-export const MarginBars: React.FC<MarginBarsProps> = ({ data }) => (
-  <div
-    style={{
-      background: COLORS.card,
-      borderRadius: 18,
-      border: `1px solid ${COLORS.border}`,
-      boxShadow: COLORS.shadow,
-      padding: "22px 28px",
-      marginBottom: 22,
-      animation: "riseUp 0.6s ease 0.35s both",
-    }}
-  >
+export const MarginBars: React.FC<MarginBarsProps> = memo(({ data }) => (
+  <div style={createCardStyle(ANIMATION_DELAYS.MARGIN_BARS)}>
     <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
       粗利率分布
     </h3>
@@ -76,7 +68,7 @@ export const MarginBars: React.FC<MarginBarsProps> = ({ data }) => (
                     fontSize: 11,
                     fontWeight: 700,
                     color: "#fff",
-                    fontFamily: "'Space Mono', monospace",
+                    fontFamily: FONTS.MONO,
                   }}
                 >
                   {d.rate}%
@@ -96,13 +88,7 @@ export const MarginBars: React.FC<MarginBarsProps> = ({ data }) => (
         color: COLORS.textMuted,
       }}
     >
-      {(
-        [
-          ["15%以上", COLORS.orbit2],
-          ["8〜15%", COLORS.sun2],
-          ["8%未満", COLORS.sun3],
-        ] as const
-      ).map(([label, color]) => (
+      {MARGIN_LEGEND.map(({ label, color }) => (
         <span
           key={label}
           style={{ display: "flex", alignItems: "center", gap: 5 }}
@@ -120,4 +106,6 @@ export const MarginBars: React.FC<MarginBarsProps> = ({ data }) => (
       ))}
     </div>
   </div>
-);
+));
+
+MarginBars.displayName = "MarginBars";

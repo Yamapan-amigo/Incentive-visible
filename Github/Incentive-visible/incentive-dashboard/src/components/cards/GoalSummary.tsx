@@ -1,5 +1,6 @@
-import React from "react";
+import React, { memo } from "react";
 import { COLORS } from "../../constants/colors";
+import { FONTS, ANIMATION_DELAYS, sectionHeaderStyle, sectionSubtitleStyle } from "../../constants/styles";
 import { fmt } from "../../utils/format";
 import type { Goals } from "../../types";
 
@@ -14,7 +15,7 @@ interface GoalItemProps {
   color: string;
 }
 
-const GoalItem: React.FC<GoalItemProps> = ({ label, value, icon, color }) => (
+const GoalItem: React.FC<GoalItemProps> = memo(({ label, value, icon, color }) => (
   <div
     style={{
       display: "flex",
@@ -45,7 +46,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ label, value, icon, color }) => (
       style={{
         fontSize: 28,
         fontWeight: 800,
-        fontFamily: "'Space Mono', monospace",
+        fontFamily: FONTS.MONO,
         color: COLORS.text,
         letterSpacing: "-0.02em",
       }}
@@ -53,9 +54,11 @@ const GoalItem: React.FC<GoalItemProps> = ({ label, value, icon, color }) => (
       {fmt(value)}
     </div>
   </div>
-);
+));
 
-export const GoalSummary: React.FC<GoalSummaryProps> = ({ goals }) => {
+GoalItem.displayName = "GoalItem";
+
+export const GoalSummary: React.FC<GoalSummaryProps> = memo(({ goals }) => {
   return (
     <div
       style={{
@@ -65,14 +68,12 @@ export const GoalSummary: React.FC<GoalSummaryProps> = ({ goals }) => {
         boxShadow: COLORS.shadow,
         padding: "28px 32px",
         marginBottom: 22,
-        animation: "riseUp 0.6s ease 0.1s both",
+        animation: `riseUp 0.6s ease ${ANIMATION_DELAYS.GOAL_SUMMARY}s both`,
       }}
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          ...sectionHeaderStyle,
           marginBottom: 24,
         }}
       >
@@ -103,9 +104,7 @@ export const GoalSummary: React.FC<GoalSummaryProps> = ({ goals }) => {
         </h2>
         <span
           style={{
-            fontSize: 10,
-            color: COLORS.textMuted,
-            fontWeight: 500,
+            ...sectionSubtitleStyle,
             letterSpacing: "0.05em",
           }}
         >
@@ -142,4 +141,6 @@ export const GoalSummary: React.FC<GoalSummaryProps> = ({ goals }) => {
       </div>
     </div>
   );
-};
+});
+
+GoalSummary.displayName = "GoalSummary";

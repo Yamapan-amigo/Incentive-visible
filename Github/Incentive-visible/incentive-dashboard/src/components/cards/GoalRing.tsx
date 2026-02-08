@@ -1,5 +1,6 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { COLORS } from "../../constants/colors";
+import { FONTS } from "../../constants/styles";
 import { fmt } from "../../utils/format";
 
 interface GoalRingProps {
@@ -9,14 +10,24 @@ interface GoalRingProps {
   color: string;
 }
 
-export const GoalRing: React.FC<GoalRingProps> = ({
+const RING_RADIUS = 42;
+const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+export const GoalRing: React.FC<GoalRingProps> = memo(({
   current,
   goal,
   label,
   color,
 }) => {
-  const ratio = goal > 0 ? Math.min(current / goal, 1) : 0;
-  const circumference = 2 * Math.PI * 42;
+  const ratio = useMemo(() =>
+    goal > 0 ? Math.min(current / goal, 1) : 0,
+    [current, goal]
+  );
+
+  const strokeDashoffset = useMemo(() =>
+    CIRCUMFERENCE * (1 - ratio),
+    [ratio]
+  );
 
   return (
     <div
@@ -33,7 +44,7 @@ export const GoalRing: React.FC<GoalRingProps> = ({
           <circle
             cx="50"
             cy="50"
-            r="42"
+            r={RING_RADIUS}
             fill="none"
             stroke="rgba(0,0,0,0.04)"
             strokeWidth="6"
@@ -42,13 +53,13 @@ export const GoalRing: React.FC<GoalRingProps> = ({
           <circle
             cx="50"
             cy="50"
-            r="42"
+            r={RING_RADIUS}
             fill="none"
             stroke={color}
             strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - ratio)}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
             transform="rotate(-90 50 50)"
             style={{ transition: "stroke-dashoffset 1.2s ease" }}
           />
@@ -67,7 +78,7 @@ export const GoalRing: React.FC<GoalRingProps> = ({
               fontSize: 18,
               fontWeight: 800,
               color: COLORS.text,
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: FONTS.MONO,
             }}
           >
             {Math.round(ratio * 100)}%
@@ -82,7 +93,7 @@ export const GoalRing: React.FC<GoalRingProps> = ({
           style={{
             fontSize: 10,
             color: COLORS.textMuted,
-            fontFamily: "'Space Mono', monospace",
+            fontFamily: FONTS.MONO,
             marginTop: 2,
           }}
         >
@@ -91,4 +102,6 @@ export const GoalRing: React.FC<GoalRingProps> = ({
       </div>
     </div>
   );
-};
+});
+
+GoalRing.displayName = "GoalRing";

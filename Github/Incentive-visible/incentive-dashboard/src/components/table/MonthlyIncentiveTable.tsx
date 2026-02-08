@@ -1,5 +1,14 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { COLORS } from "../../constants/colors";
+import {
+  createCardStyle,
+  createIconBadgeStyle,
+  sectionHeaderStyle,
+  sectionTitleStyle,
+  sectionSubtitleStyle,
+  FONTS,
+  ANIMATION_DELAYS,
+} from "../../constants/styles";
 import { fmt } from "../../utils/format";
 import type { IncentiveEntry } from "../../types";
 
@@ -16,11 +25,44 @@ interface MonthlyData {
   incentive: number;
 }
 
-export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = ({
+const cellStyle: React.CSSProperties = {
+  padding: "12px 16px",
+  textAlign: "right",
+  fontSize: 13,
+  fontFamily: FONTS.MONO,
+  borderBottom: `1px solid ${COLORS.border}`,
+};
+
+const headerCellStyle: React.CSSProperties = {
+  ...cellStyle,
+  fontWeight: 700,
+  fontSize: 11,
+  color: COLORS.textSub,
+  textAlign: "center",
+  background: "rgba(0,0,0,0.02)",
+  fontFamily: FONTS.SANS_JP,
+};
+
+const monthCellStyle: React.CSSProperties = {
+  ...cellStyle,
+  textAlign: "left",
+  fontWeight: 600,
+  fontFamily: FONTS.SANS_JP,
+};
+
+const totalRowStyle: React.CSSProperties = {
+  ...cellStyle,
+  fontWeight: 700,
+  background: "linear-gradient(135deg, rgba(251,146,60,0.08), rgba(251,191,36,0.08))",
+  color: COLORS.text,
+  borderBottom: "none",
+};
+
+export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = memo(({
   data,
 }) => {
   // Group data by month and calculate totals
-  const monthlyData: MonthlyData[] = React.useMemo(() => {
+  const monthlyData: MonthlyData[] = useMemo(() => {
     const monthMap = new Map<string, MonthlyData>();
 
     data.forEach((entry) => {
@@ -50,7 +92,7 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = ({
   }, [data]);
 
   // Calculate yearly total
-  const yearlyTotal = React.useMemo(() => {
+  const yearlyTotal = useMemo(() => {
     return monthlyData.reduce(
       (acc, m) => ({
         billing: acc.billing + m.billing,
@@ -62,87 +104,16 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = ({
     );
   }, [monthlyData]);
 
-  const cellStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    textAlign: "right",
-    fontSize: 13,
-    fontFamily: "'Space Mono', monospace",
-    borderBottom: `1px solid ${COLORS.border}`,
-  };
-
-  const headerCellStyle: React.CSSProperties = {
-    ...cellStyle,
-    fontWeight: 700,
-    fontSize: 11,
-    color: COLORS.textSub,
-    textAlign: "center",
-    background: "rgba(0,0,0,0.02)",
-    fontFamily: "'Noto Sans JP', sans-serif",
-  };
-
-  const monthCellStyle: React.CSSProperties = {
-    ...cellStyle,
-    textAlign: "left",
-    fontWeight: 600,
-    fontFamily: "'Noto Sans JP', sans-serif",
-  };
-
-  const totalRowStyle: React.CSSProperties = {
-    ...cellStyle,
-    fontWeight: 700,
-    background: "linear-gradient(135deg, rgba(251,146,60,0.08), rgba(251,191,36,0.08))",
-    color: COLORS.text,
-    borderBottom: "none",
-  };
-
   return (
-    <div
-      style={{
-        background: COLORS.card,
-        borderRadius: 18,
-        border: `1px solid ${COLORS.border}`,
-        boxShadow: COLORS.shadow,
-        padding: "22px 28px",
-        marginBottom: 22,
-        animation: "riseUp 0.6s ease 0.35s both",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <h3
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 6,
-              background: COLORS.gradNebula,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 10,
-            }}
-          >
+    <div style={createCardStyle(ANIMATION_DELAYS.MONTHLY_TABLE)}>
+      <div style={sectionHeaderStyle}>
+        <h3 style={sectionTitleStyle}>
+          <span style={createIconBadgeStyle(COLORS.gradNebula)}>
             📅
           </span>
           月別インセンティブ
         </h3>
-        <span
-          style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 500 }}
-        >
+        <span style={sectionSubtitleStyle}>
           MONTHLY BREAKDOWN
         </span>
       </div>
@@ -179,7 +150,7 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = ({
             ))}
             {/* Yearly Total Row */}
             <tr>
-              <td style={{ ...totalRowStyle, textAlign: "left", fontFamily: "'Noto Sans JP', sans-serif" }}>
+              <td style={{ ...totalRowStyle, textAlign: "left", fontFamily: FONTS.SANS_JP }}>
                 🎯 年間合計
               </td>
               <td style={totalRowStyle}>{fmt(yearlyTotal.billing)}</td>
@@ -194,4 +165,6 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MonthlyIncentiveTable.displayName = "MonthlyIncentiveTable";

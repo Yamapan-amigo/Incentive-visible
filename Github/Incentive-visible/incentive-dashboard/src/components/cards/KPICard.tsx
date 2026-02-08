@@ -1,5 +1,6 @@
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { COLORS } from "../../constants/colors";
+import { FONTS } from "../../constants/styles";
 
 interface KPICardProps {
   label: string;
@@ -10,7 +11,7 @@ interface KPICardProps {
   delay: number;
 }
 
-export const KPICard: React.FC<KPICardProps> = ({
+export const KPICard: React.FC<KPICardProps> = memo(({
   label,
   value,
   sub,
@@ -18,15 +19,15 @@ export const KPICard: React.FC<KPICardProps> = ({
   icon,
   delay,
 }) => {
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.currentTarget.style.transform = "translateY(-3px)";
     e.currentTarget.style.boxShadow = COLORS.shadowHover;
-  };
+  }, []);
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.currentTarget.style.transform = "translateY(0)";
     e.currentTarget.style.boxShadow = COLORS.shadow;
-  };
+  }, []);
 
   return (
     <div
@@ -81,7 +82,7 @@ export const KPICard: React.FC<KPICardProps> = ({
               fontSize: 26,
               fontWeight: 800,
               color: COLORS.text,
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: FONTS.MONO,
               letterSpacing: "-0.03em",
             }}
           >
@@ -118,4 +119,6 @@ export const KPICard: React.FC<KPICardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+KPICard.displayName = "KPICard";
