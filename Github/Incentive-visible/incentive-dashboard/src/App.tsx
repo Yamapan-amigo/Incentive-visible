@@ -404,8 +404,10 @@ function App() {
         {/* Monthly Incentive Table - Show yearly data in yearly view */}
         <MonthlyIncentiveTable data={yearFilteredData} />
 
-        {/* Detail Table */}
-        <DetailTable data={filteredData} onEdit={handleOpenEditModal} onDelete={deleteEntry} />
+        {/* Detail Table - Only in monthly view */}
+        {viewMode === "monthly" && (
+          <DetailTable data={filteredData} onEdit={handleOpenEditModal} onDelete={deleteEntry} />
+        )}
 
         {/* Footer */}
         <div
