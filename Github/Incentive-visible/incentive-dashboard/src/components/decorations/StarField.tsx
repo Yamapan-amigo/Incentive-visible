@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useState } from "react";
 import { COLORS } from "../../constants/colors";
 
 interface Star {
@@ -11,20 +11,22 @@ interface Star {
   opacity: number;
 }
 
+// Generate stars outside component to ensure stable values
+function generateStars(): Star[] {
+  return Array.from({ length: 35 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 2.2 + 0.8,
+    dur: Math.random() * 4 + 3,
+    delay: Math.random() * 5,
+    opacity: Math.random() * 0.2 + 0.04,
+  }));
+}
+
 export const StarField: React.FC = () => {
-  const stars = useMemo<Star[]>(
-    () =>
-      Array.from({ length: 35 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2.2 + 0.8,
-        dur: Math.random() * 4 + 3,
-        delay: Math.random() * 5,
-        opacity: Math.random() * 0.2 + 0.04,
-      })),
-    []
-  );
+  // Use lazy initialization to generate stars only once
+  const [stars] = useState<Star[]>(() => generateStars());
 
   const getStarColor = (id: number): string => {
     if (id % 3 === 0) return COLORS.sun1;

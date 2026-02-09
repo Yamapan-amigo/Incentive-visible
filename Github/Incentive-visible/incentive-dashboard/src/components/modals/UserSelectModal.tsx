@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { COLORS } from "../../constants/colors";
 import { STORAGE_KEYS } from "../../hooks/useIncentiveData";
-import { buttonStyle, inputStyle } from "../ui/FormField";
+import { buttonStyle, inputStyle } from "../ui/formStyles";
 
 interface UserSelectModalProps {
   isOpen: boolean;

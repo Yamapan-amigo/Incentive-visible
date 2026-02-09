@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal } from "../ui/Modal";
-import { FormField, inputStyle, buttonStyle } from "../ui/FormField";
+import { FormField } from "../ui/FormField";
+import { inputStyle, buttonStyle } from "../ui/formStyles";
 import type { NewEntry } from "../../types";
 
 interface AddDataModalProps {

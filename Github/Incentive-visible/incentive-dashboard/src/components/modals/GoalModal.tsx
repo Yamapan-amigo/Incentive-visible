@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Modal } from "../ui/Modal";
-import { FormField, inputStyle, buttonStyle } from "../ui/FormField";
+import { FormField } from "../ui/FormField";
+import { inputStyle, buttonStyle } from "../ui/formStyles";
 import { COLORS } from "../../constants/colors";
 import type { Goals } from "../../types";
 
@@ -17,28 +18,18 @@ const formatWithCommas = (value: number): string => {
   return value.toLocaleString();
 };
 
-export const GoalModal: React.FC<GoalModalProps> = ({
-  isOpen,
-  onClose,
-  tempGoals,
-  setTempGoals,
-  onSave,
-}) => {
+// Inner component that uses key prop to reset state when tempGoals changes
+const GoalModalInner: React.FC<{
+  initialGoals: Goals;
+  setTempGoals: React.Dispatch<React.SetStateAction<Goals>>;
+  onSave: () => void;
+}> = ({ initialGoals, setTempGoals, onSave }) => {
   // Local state for formatted display values
-  const [displayValues, setDisplayValues] = useState({
-    billing: formatWithCommas(tempGoals.billing),
-    profit: formatWithCommas(tempGoals.profit),
-    incentive: formatWithCommas(tempGoals.incentive),
-  });
-
-  // Sync display values when tempGoals changes (e.g., modal opens)
-  useEffect(() => {
-    setDisplayValues({
-      billing: formatWithCommas(tempGoals.billing),
-      profit: formatWithCommas(tempGoals.profit),
-      incentive: formatWithCommas(tempGoals.incentive),
-    });
-  }, [tempGoals.billing, tempGoals.profit, tempGoals.incentive]);
+  const [displayValues, setDisplayValues] = useState(() => ({
+    billing: formatWithCommas(initialGoals.billing),
+    profit: formatWithCommas(initialGoals.profit),
+    incentive: formatWithCommas(initialGoals.incentive),
+  }));
 
   const handleChange = (field: keyof Goals) => (
     e: React.ChangeEvent<HTMLInputElement>
@@ -54,7 +45,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🎯 目標額設定">
+    <>
       <p
         style={{
           fontSize: 12,
@@ -95,6 +86,31 @@ export const GoalModal: React.FC<GoalModalProps> = ({
       <button onClick={onSave} style={buttonStyle}>
         保存する
       </button>
+    </>
+  );
+};
+
+export const GoalModal: React.FC<GoalModalProps> = ({
+  isOpen,
+  onClose,
+  tempGoals,
+  setTempGoals,
+  onSave,
+}) => {
+  // Create a stable key based on tempGoals values
+  const goalsKey = useMemo(
+    () => `${tempGoals.billing}-${tempGoals.profit}-${tempGoals.incentive}`,
+    [tempGoals.billing, tempGoals.profit, tempGoals.incentive]
+  );
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="🎯 目標額設定">
+      <GoalModalInner
+        key={goalsKey}
+        initialGoals={tempGoals}
+        setTempGoals={setTempGoals}
+        onSave={onSave}
+      />
     </Modal>
   );
 };

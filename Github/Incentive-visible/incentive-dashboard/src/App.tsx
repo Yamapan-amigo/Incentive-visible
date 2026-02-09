@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { COLORS } from "./constants/colors";
 import { fmt, pct } from "./utils/format";
 import { useIncentiveData, STORAGE_KEYS } from "./hooks/useIncentiveData";
@@ -62,19 +62,13 @@ function App() {
     setProfileSettings,
   } = useIncentiveData();
 
-  // Current user state (sales person)
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [showUserSelectModal, setShowUserSelectModal] = useState(false);
-
-  // Load current user from localStorage on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    if (savedUser) {
-      setCurrentUser(savedUser);
-    } else {
-      setShowUserSelectModal(true);
-    }
-  }, []);
+  // Current user state (sales person) - initialized from localStorage
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  });
+  const [showUserSelectModal, setShowUserSelectModal] = useState(() => {
+    return !localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  });
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -94,24 +88,27 @@ function App() {
     month: selectedMonth,
   });
 
-  // Update newEntry.sales when currentUser changes
-  useEffect(() => {
-    if (currentUser) {
-      setNewEntry((prev) => ({ ...prev, sales: currentUser }));
-    }
-  }, [currentUser]);
-
   // Handler for user selection
   const handleUserSelect = (user: string) => {
     setCurrentUser(user);
     setShowUserSelectModal(false);
   };
 
+  // Handler for opening add modal
+  const handleOpenAddModal = useCallback(() => {
+    setNewEntry((prev) => ({
+      ...prev,
+      sales: currentUser || "",
+      month: selectedMonth,
+    }));
+    setShowAddModal(true);
+  }, [currentUser, selectedMonth]);
+
   // Chart data
   const barChartData = useMemo(
     () =>
       filteredData.map((d) => ({
-        name: d.name.split(/[\s　]/)[0],
+        name: d.name.split(/[\s\u3000]/)[0],
         売上: d.billing,
         仕入: d.cost,
         粗利: d.billing - d.cost,
@@ -130,7 +127,7 @@ function App() {
   const marginData = useMemo(
     () =>
       filteredData.map((d) => ({
-        name: d.name.split(/[\s　]/)[0],
+        name: d.name.split(/[\s\u3000]/)[0],
         rate: parseFloat(
           (((d.billing - d.cost) / d.billing) * 100).toFixed(1)
         ),
@@ -270,7 +267,7 @@ function App() {
         selectedSales={selectedSales}
         onSelectSales={setSelectedSales}
         onOpenGoalModal={handleOpenGoalModal}
-        onOpenAddModal={() => setShowAddModal(true)}
+        onOpenAddModal={handleOpenAddModal}
         onOpenSettingsModal={handleOpenSettingsModal}
         viewMode={viewMode}
         onViewModeChange={setViewMode}

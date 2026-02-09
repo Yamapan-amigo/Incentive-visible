@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Modal } from "../ui/Modal";
-import { FormField, inputStyle, buttonStyle } from "../ui/FormField";
+import { FormField } from "../ui/FormField";
+import { inputStyle, buttonStyle } from "../ui/formStyles";
 import { COLORS } from "../../constants/colors";
 import type { ProfileSettings, Goals } from "../../types";
 
@@ -16,39 +17,24 @@ const formatWithCommas = (value: number): string => {
   return value.toLocaleString();
 };
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({
-  isOpen,
-  onClose,
-  profileSettings,
-  onSave,
-}) => {
+// Inner component that resets when profileSettings changes via key prop
+const SettingsModalInner: React.FC<{
+  initialSettings: ProfileSettings;
+  onSave: (settings: ProfileSettings) => void;
+  onClose: () => void;
+}> = ({ initialSettings, onSave, onClose }) => {
   // Local state for editing
-  const [localSettings, setLocalSettings] = useState<ProfileSettings>(profileSettings);
+  const [localSettings, setLocalSettings] = useState<ProfileSettings>(initialSettings);
   const [newSalesPerson, setNewSalesPerson] = useState("");
   const [newFocusClient, setNewFocusClient] = useState("");
   const [editingSalesPerson, setEditingSalesPerson] = useState<{ index: number; value: string } | null>(null);
 
   // Display values for goals (formatted with commas)
-  const [displayGoals, setDisplayGoals] = useState({
-    billing: formatWithCommas(profileSettings.goals.billing),
-    profit: formatWithCommas(profileSettings.goals.profit),
-    incentive: formatWithCommas(profileSettings.goals.incentive),
-  });
-
-  // Sync local state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setLocalSettings(profileSettings);
-      setDisplayGoals({
-        billing: formatWithCommas(profileSettings.goals.billing),
-        profit: formatWithCommas(profileSettings.goals.profit),
-        incentive: formatWithCommas(profileSettings.goals.incentive),
-      });
-      setNewSalesPerson("");
-      setNewFocusClient("");
-      setEditingSalesPerson(null);
-    }
-  }, [isOpen, profileSettings]);
+  const [displayGoals, setDisplayGoals] = useState(() => ({
+    billing: formatWithCommas(initialSettings.goals.billing),
+    profit: formatWithCommas(initialSettings.goals.profit),
+    incentive: formatWithCommas(initialSettings.goals.incentive),
+  }));
 
   // Handle goal input change
   const handleGoalChange = (field: keyof Goals) => (
@@ -195,7 +181,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="設定">
+    <>
       {/* Sales Persons Section */}
       <div style={sectionStyle}>
         <div style={sectionHeaderStyle}>
@@ -366,6 +352,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <button onClick={handleSave} style={buttonStyle}>
         保存する
       </button>
+    </>
+  );
+};
+
+export const SettingsModal: React.FC<SettingsModalProps> = ({
+  isOpen,
+  onClose,
+  profileSettings,
+  onSave,
+}) => {
+  // Create a stable key based on isOpen to reset state when modal opens
+  const settingsKey = useMemo(
+    () => isOpen ? `open-${Date.now()}` : "closed",
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isOpen && profileSettings]
+  );
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="設定">
+      {isOpen && (
+        <SettingsModalInner
+          key={settingsKey}
+          initialSettings={profileSettings}
+          onSave={onSave}
+          onClose={onClose}
+        />
+      )}
     </Modal>
   );
 };

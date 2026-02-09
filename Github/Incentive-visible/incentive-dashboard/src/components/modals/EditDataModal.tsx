@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Modal } from "../ui/Modal";
-import { FormField, inputStyle, buttonStyle } from "../ui/FormField";
+import { FormField } from "../ui/FormField";
+import { inputStyle, buttonStyle } from "../ui/formStyles";
 import { COLORS } from "../../constants/colors";
 import type { IncentiveEntry } from "../../types";
 
@@ -22,38 +23,27 @@ interface EditFormData {
   month: string;
 }
 
-export const EditDataModal: React.FC<EditDataModalProps> = ({
-  isOpen,
-  onClose,
-  entry,
-  onSave,
-}) => {
-  const [formData, setFormData] = useState<EditFormData>({
-    name: "",
-    sales: "",
-    affiliation: "",
-    client: "",
-    billing: "",
-    cost: "",
-    incentiveTarget: "",
-    month: "",
-  });
+// Inner component that resets when entry changes via key prop
+const EditDataModalInner: React.FC<{
+  entry: IncentiveEntry;
+  onClose: () => void;
+  onSave: (id: number, entry: Omit<IncentiveEntry, "id">) => void;
+}> = ({ entry, onClose, onSave }) => {
+  const initialFormData = useMemo<EditFormData>(
+    () => ({
+      name: entry.name,
+      sales: entry.sales,
+      affiliation: entry.affiliation,
+      client: entry.client,
+      billing: entry.billing.toString(),
+      cost: entry.cost.toString(),
+      incentiveTarget: entry.incentiveTarget.toString(),
+      month: entry.month,
+    }),
+    [entry]
+  );
 
-  // Sync form data when entry changes
-  useEffect(() => {
-    if (entry) {
-      setFormData({
-        name: entry.name,
-        sales: entry.sales,
-        affiliation: entry.affiliation,
-        client: entry.client,
-        billing: entry.billing.toString(),
-        cost: entry.cost.toString(),
-        incentiveTarget: entry.incentiveTarget.toString(),
-        month: entry.month,
-      });
-    }
-  }, [entry]);
+  const [formData, setFormData] = useState<EditFormData>(initialFormData);
 
   const updateField = (field: keyof EditFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
@@ -62,7 +52,7 @@ export const EditDataModal: React.FC<EditDataModalProps> = ({
   };
 
   const handleSave = () => {
-    if (!entry || !formData.name || !formData.billing || !formData.cost) return;
+    if (!formData.name || !formData.billing || !formData.cost) return;
 
     onSave(entry.id, {
       name: formData.name,
@@ -77,10 +67,8 @@ export const EditDataModal: React.FC<EditDataModalProps> = ({
     onClose();
   };
 
-  if (!entry) return null;
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="データ編集">
+    <>
       <FormField label="要員名">
         <input
           style={inputStyle}
@@ -169,6 +157,26 @@ export const EditDataModal: React.FC<EditDataModalProps> = ({
       >
         キャンセル
       </button>
+    </>
+  );
+};
+
+export const EditDataModal: React.FC<EditDataModalProps> = ({
+  isOpen,
+  onClose,
+  entry,
+  onSave,
+}) => {
+  if (!entry) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="データ編集">
+      <EditDataModalInner
+        key={entry.id}
+        entry={entry}
+        onClose={onClose}
+        onSave={onSave}
+      />
     </Modal>
   );
 };
