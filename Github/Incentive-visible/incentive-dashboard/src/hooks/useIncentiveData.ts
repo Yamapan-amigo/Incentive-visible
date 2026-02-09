@@ -24,7 +24,8 @@ interface DbIncentiveEntry {
   month: string;
 }
 
-// DbGoals type matches Supabase goals table structure
+// Note: profile_settings table uses snake_case columns:
+// sales_persons, current_user_name, focus_clients
 
 // Convert DB row to app type
 function dbToEntry(row: DbIncentiveEntry): IncentiveEntry {
@@ -119,12 +120,32 @@ export function useIncentiveData() {
 
           if (goalsError && goalsError.code !== "PGRST116") throw goalsError;
 
+          // Fetch profile settings from Supabase
+          const { data: profileData, error: profileError } = await supabase
+            .from("profile_settings")
+            .select("*")
+            .limit(1)
+            .single();
+
+          if (profileError && profileError.code !== "PGRST116") throw profileError;
+
           setData(entries ? entries.map(dbToEntry) : []);
-          if (goalsData) {
-            setGoalsState({
-              billing: goalsData.billing,
-              profit: goalsData.profit,
-              incentive: goalsData.incentive,
+
+          const loadedGoals = goalsData
+            ? {
+                billing: goalsData.billing,
+                profit: goalsData.profit,
+                incentive: goalsData.incentive,
+              }
+            : DEFAULT_GOALS;
+          setGoalsState(loadedGoals);
+
+          if (profileData) {
+            setProfileSettingsState({
+              salesPersons: profileData.sales_persons || DEFAULT_PROFILE_SETTINGS.salesPersons,
+              currentUser: profileData.current_user_name || "",
+              goals: loadedGoals,
+              focusClients: profileData.focus_clients || [],
             });
           }
         } catch (err) {
@@ -383,11 +404,44 @@ export function useIncentiveData() {
   }, []);
 
   // Update profile settings
-  const setProfileSettings = useCallback((newSettings: ProfileSettings) => {
+  const setProfileSettings = useCallback(async (newSettings: ProfileSettings) => {
     setProfileSettingsState(newSettings);
+
     // Sync goals state
     if (newSettings.goals) {
       setGoalsState(newSettings.goals);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        // Update profile settings in Supabase
+        const { error: profileError } = await supabase
+          .from("profile_settings")
+          .update({
+            sales_persons: newSettings.salesPersons,
+            current_user_name: newSettings.currentUser,
+            focus_clients: newSettings.focusClients,
+          })
+          .eq("id", 1);
+
+        if (profileError) throw profileError;
+
+        // Also update goals in Supabase
+        if (newSettings.goals) {
+          const { error: goalsError } = await supabase
+            .from("goals")
+            .update({
+              billing: newSettings.goals.billing,
+              profit: newSettings.goals.profit,
+              incentive: newSettings.goals.incentive,
+            })
+            .eq("id", 1);
+
+          if (goalsError) throw goalsError;
+        }
+      } catch (err) {
+        console.error("Failed to update profile settings:", err);
+      }
     }
   }, []);
 

@@ -31,9 +31,25 @@ INSERT INTO goals (billing, profit, incentive)
 SELECT 5000000, 800000, 350000
 WHERE NOT EXISTS (SELECT 1 FROM goals LIMIT 1);
 
+-- Profile settings table
+CREATE TABLE IF NOT EXISTS profile_settings (
+  id BIGSERIAL PRIMARY KEY,
+  sales_persons TEXT[] NOT NULL DEFAULT ARRAY['岡田'],
+  current_user_name TEXT NOT NULL DEFAULT '',
+  focus_clients TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insert default profile settings if not exists
+INSERT INTO profile_settings (sales_persons, current_user_name, focus_clients)
+SELECT ARRAY['岡田'], '', ARRAY[]::TEXT[]
+WHERE NOT EXISTS (SELECT 1 FROM profile_settings LIMIT 1);
+
 -- Enable Row Level Security (optional, for future auth)
 ALTER TABLE incentive_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profile_settings ENABLE ROW LEVEL SECURITY;
 
 -- Allow public access (for now, without auth)
 CREATE POLICY "Allow public read access on incentive_entries"
@@ -60,6 +76,14 @@ CREATE POLICY "Allow public update access on goals"
   ON goals FOR UPDATE
   USING (true);
 
+CREATE POLICY "Allow public read access on profile_settings"
+  ON profile_settings FOR SELECT
+  USING (true);
+
+CREATE POLICY "Allow public update access on profile_settings"
+  ON profile_settings FOR UPDATE
+  USING (true);
+
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -77,5 +101,10 @@ CREATE TRIGGER update_incentive_entries_updated_at
 
 CREATE TRIGGER update_goals_updated_at
   BEFORE UPDATE ON goals
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_profile_settings_updated_at
+  BEFORE UPDATE ON profile_settings
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
