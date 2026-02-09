@@ -36,10 +36,13 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
       </FormField>
       <FormField label="営業担当">
         <input
-          style={inputStyle}
+          style={{
+            ...inputStyle,
+            backgroundColor: "#f5f5f5",
+            cursor: "not-allowed",
+          }}
           value={newEntry.sales}
-          onChange={updateField("sales")}
-          placeholder="岡田"
+          readOnly
         />
       </FormField>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

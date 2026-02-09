@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { COLORS } from "./constants/colors";
 import { fmt, pct } from "./utils/format";
-import { useIncentiveData } from "./hooks/useIncentiveData";
+import { useIncentiveData, STORAGE_KEYS } from "./hooks/useIncentiveData";
 import type { NewEntry, Goals, IncentiveEntry } from "./types";
+import type { SalesPerson } from "./constants/initialData";
 
 // Layout components
 import { CursorGlow } from "./components/layout/CursorGlow";
@@ -32,6 +33,7 @@ import { StaffYearlySummary } from "./components/table/StaffYearlySummary";
 import { AddDataModal } from "./components/modals/AddDataModal";
 import { EditDataModal } from "./components/modals/EditDataModal";
 import { GoalModal } from "./components/modals/GoalModal";
+import { UserSelectModal } from "./components/modals/UserSelectModal";
 
 import "./styles/animations.css";
 
@@ -58,6 +60,20 @@ function App() {
     deleteEntry,
   } = useIncentiveData();
 
+  // Current user state (sales person)
+  const [currentUser, setCurrentUser] = useState<SalesPerson | null>(null);
+  const [showUserSelectModal, setShowUserSelectModal] = useState(false);
+
+  // Load current user from localStorage on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER) as SalesPerson | null;
+    if (savedUser) {
+      setCurrentUser(savedUser);
+    } else {
+      setShowUserSelectModal(true);
+    }
+  }, []);
+
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -66,7 +82,7 @@ function App() {
   const [tempGoals, setTempGoals] = useState<Goals>(goals);
   const [newEntry, setNewEntry] = useState<NewEntry>({
     name: "",
-    sales: "",
+    sales: currentUser || "",
     affiliation: "",
     client: "",
     billing: "",
@@ -74,6 +90,19 @@ function App() {
     incentiveTarget: "",
     month: selectedMonth,
   });
+
+  // Update newEntry.sales when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setNewEntry((prev) => ({ ...prev, sales: currentUser }));
+    }
+  }, [currentUser]);
+
+  // Handler for user selection
+  const handleUserSelect = (user: SalesPerson) => {
+    setCurrentUser(user);
+    setShowUserSelectModal(false);
+  };
 
   // Chart data
   const barChartData = useMemo(
@@ -107,29 +136,33 @@ function App() {
   );
 
   // Handlers
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newEntry.name || !newEntry.billing || !newEntry.cost) return;
-    addEntry({
-      name: newEntry.name,
-      sales: newEntry.sales,
-      affiliation: newEntry.affiliation,
-      client: newEntry.client,
-      billing: +newEntry.billing,
-      cost: +newEntry.cost,
-      incentiveTarget: +newEntry.incentiveTarget,
-      month: newEntry.month,
-    });
-    setNewEntry({
-      name: "",
-      sales: "",
-      affiliation: "",
-      client: "",
-      billing: "",
-      cost: "",
-      incentiveTarget: "",
-      month: selectedMonth,
-    });
-    setShowAddModal(false);
+    try {
+      await addEntry({
+        name: newEntry.name,
+        sales: newEntry.sales,
+        affiliation: newEntry.affiliation,
+        client: newEntry.client,
+        billing: +newEntry.billing,
+        cost: +newEntry.cost,
+        incentiveTarget: +newEntry.incentiveTarget,
+        month: newEntry.month,
+      });
+      setNewEntry({
+        name: "",
+        sales: currentUser || "",
+        affiliation: "",
+        client: "",
+        billing: "",
+        cost: "",
+        incentiveTarget: "",
+        month: selectedMonth,
+      });
+      setShowAddModal(false);
+    } catch (err) {
+      console.error("Failed to add entry:", err);
+    }
   };
 
   const handleOpenGoalModal = () => {
@@ -137,8 +170,8 @@ function App() {
     setShowGoalModal(true);
   };
 
-  const handleSaveGoals = () => {
-    setGoals(tempGoals);
+  const handleSaveGoals = async () => {
+    await setGoals(tempGoals);
     setShowGoalModal(false);
   };
 
@@ -424,6 +457,11 @@ function App() {
       </div>
 
       {/* Modals */}
+      <UserSelectModal
+        isOpen={showUserSelectModal}
+        onSelect={handleUserSelect}
+      />
+
       <AddDataModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}

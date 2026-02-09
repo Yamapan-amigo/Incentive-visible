@@ -1,11 +1,57 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { IncentiveEntry, Goals, Stats, ViewMode, MonthlyData } from "../types";
 import { INITIAL_DATA, DEFAULT_GOALS } from "../constants/initialData";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   DATA: "incentive-data",
   GOALS: "incentive-goals",
+  CURRENT_USER: "current-user",
 };
+
+// Database row type (snake_case from Supabase)
+interface DbIncentiveEntry {
+  id: number;
+  name: string;
+  sales: string;
+  affiliation: string;
+  client: string;
+  billing: number;
+  cost: number;
+  incentive_target: number;
+  month: string;
+}
+
+// DbGoals type matches Supabase goals table structure
+
+// Convert DB row to app type
+function dbToEntry(row: DbIncentiveEntry): IncentiveEntry {
+  return {
+    id: row.id,
+    name: row.name,
+    sales: row.sales,
+    affiliation: row.affiliation,
+    client: row.client,
+    billing: row.billing,
+    cost: row.cost,
+    incentiveTarget: row.incentive_target,
+    month: row.month,
+  };
+}
+
+// Convert app type to DB row
+function entryToDb(entry: Omit<IncentiveEntry, "id">): Omit<DbIncentiveEntry, "id"> {
+  return {
+    name: entry.name,
+    sales: entry.sales,
+    affiliation: entry.affiliation,
+    client: entry.client,
+    billing: entry.billing,
+    cost: entry.cost,
+    incentive_target: entry.incentiveTarget,
+    month: entry.month,
+  };
+}
 
 // Generate array of 12 months for a given year
 function generateMonthsForYear(year: string): string[] {
@@ -26,17 +72,10 @@ function getCurrentMonth(): string {
 }
 
 export function useIncentiveData() {
-  // Initialize data from localStorage or use initial data
-  const [data, setData] = useState<IncentiveEntry[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DATA);
-    return saved ? JSON.parse(saved) : INITIAL_DATA;
-  });
-
-  // Initialize goals from localStorage or use defaults
-  const [goals, setGoals] = useState<Goals>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.GOALS);
-    return saved ? JSON.parse(saved) : DEFAULT_GOALS;
-  });
+  const [data, setData] = useState<IncentiveEntry[]>([]);
+  const [goals, setGoalsState] = useState<Goals>(DEFAULT_GOALS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Selected sales person filter
   const [selectedSales, setSelectedSales] = useState<string>("all");
@@ -50,15 +89,75 @@ export function useIncentiveData() {
   // Selected month (YYYY-MM format) - used in monthly view
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
 
-  // Auto-save data to localStorage
+  // Load data from Supabase or localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data));
-  }, [data]);
+    async function loadData() {
+      setLoading(true);
+      setError(null);
 
-  // Auto-save goals to localStorage
+      if (isSupabaseConfigured && supabase) {
+        try {
+          // Fetch entries from Supabase
+          const { data: entries, error: entriesError } = await supabase
+            .from("incentive_entries")
+            .select("*")
+            .order("month", { ascending: false });
+
+          if (entriesError) throw entriesError;
+
+          // Fetch goals from Supabase
+          const { data: goalsData, error: goalsError } = await supabase
+            .from("goals")
+            .select("*")
+            .limit(1)
+            .single();
+
+          if (goalsError && goalsError.code !== "PGRST116") throw goalsError;
+
+          setData(entries ? entries.map(dbToEntry) : []);
+          if (goalsData) {
+            setGoalsState({
+              billing: goalsData.billing,
+              profit: goalsData.profit,
+              incentive: goalsData.incentive,
+            });
+          }
+        } catch (err) {
+          console.error("Supabase error:", err);
+          setError("データの読み込みに失敗しました");
+          // Fallback to localStorage
+          loadFromLocalStorage();
+        }
+      } else {
+        // Use localStorage
+        loadFromLocalStorage();
+      }
+
+      setLoading(false);
+    }
+
+    function loadFromLocalStorage() {
+      const savedData = localStorage.getItem(STORAGE_KEYS.DATA);
+      const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
+      setData(savedData ? JSON.parse(savedData) : INITIAL_DATA);
+      setGoalsState(savedGoals ? JSON.parse(savedGoals) : DEFAULT_GOALS);
+    }
+
+    loadData();
+  }, []);
+
+  // Save to localStorage as backup
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
-  }, [goals]);
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data));
+    }
+  }, [data, loading]);
+
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+    }
+  }, [goals, loading]);
 
   // Get unique sales persons
   const salesPersons = useMemo(
@@ -162,21 +261,99 @@ export function useIncentiveData() {
   }, [salesFilteredData, selectedYear]);
 
   // Add new entry
-  const addEntry = (entry: Omit<IncentiveEntry, "id">) => {
-    setData((prev) => [...prev, { ...entry, id: Date.now() }]);
-  };
+  const addEntry = useCallback(async (entry: Omit<IncentiveEntry, "id">) => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: newEntry, error } = await supabase
+          .from("incentive_entries")
+          .insert(entryToDb(entry))
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setData((prev) => [...prev, dbToEntry(newEntry)]);
+      } catch (err) {
+        console.error("Failed to add entry:", err);
+        // Fallback to local
+        setData((prev) => [...prev, { ...entry, id: Date.now() }]);
+      }
+    } else {
+      setData((prev) => [...prev, { ...entry, id: Date.now() }]);
+    }
+  }, []);
 
   // Update existing entry
-  const updateEntry = (id: number, entry: Omit<IncentiveEntry, "id">) => {
-    setData((prev) =>
-      prev.map((d) => (d.id === id ? { ...entry, id } : d))
-    );
-  };
+  const updateEntry = useCallback(async (id: number, entry: Omit<IncentiveEntry, "id">) => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from("incentive_entries")
+          .update(entryToDb(entry))
+          .eq("id", id);
+
+        if (error) throw error;
+
+        setData((prev) =>
+          prev.map((d) => (d.id === id ? { ...entry, id } : d))
+        );
+      } catch (err) {
+        console.error("Failed to update entry:", err);
+        // Fallback to local
+        setData((prev) =>
+          prev.map((d) => (d.id === id ? { ...entry, id } : d))
+        );
+      }
+    } else {
+      setData((prev) =>
+        prev.map((d) => (d.id === id ? { ...entry, id } : d))
+      );
+    }
+  }, []);
 
   // Delete entry
-  const deleteEntry = (id: number) => {
-    setData((prev) => prev.filter((d) => d.id !== id));
-  };
+  const deleteEntry = useCallback(async (id: number) => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from("incentive_entries")
+          .delete()
+          .eq("id", id);
+
+        if (error) throw error;
+
+        setData((prev) => prev.filter((d) => d.id !== id));
+      } catch (err) {
+        console.error("Failed to delete entry:", err);
+        // Fallback to local
+        setData((prev) => prev.filter((d) => d.id !== id));
+      }
+    } else {
+      setData((prev) => prev.filter((d) => d.id !== id));
+    }
+  }, []);
+
+  // Update goals
+  const setGoals = useCallback(async (newGoals: Goals) => {
+    setGoalsState(newGoals);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from("goals")
+          .update({
+            billing: newGoals.billing,
+            profit: newGoals.profit,
+            incentive: newGoals.incentive,
+          })
+          .eq("id", 1);
+
+        if (error) throw error;
+      } catch (err) {
+        console.error("Failed to update goals:", err);
+      }
+    }
+  }, []);
 
   return {
     data,
@@ -201,5 +378,7 @@ export function useIncentiveData() {
     addEntry,
     updateEntry,
     deleteEntry,
+    loading,
+    error,
   };
 }

@@ -1,5 +1,9 @@
 import type { IncentiveEntry } from "../types";
 
+// Sales persons list - add new sales persons here
+export const SALES_PERSONS = ["岡田"] as const;
+export type SalesPerson = (typeof SALES_PERSONS)[number];
+
 export const INITIAL_DATA: IncentiveEntry[] = [
   // 2025-01 January
   { id: 101, name: "中原 俊吾", sales: "岡田", affiliation: "アットバーチ株式会社", client: "NXtech株式会社", billing: 700000, cost: 660000, incentiveTarget: 40000, month: "2025-01" },
