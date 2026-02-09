@@ -49,3 +49,17 @@ export interface MonthlyData {
   incentive: number;
   count: number;
 }
+
+export interface ProfileSettings {
+  salesPersons: string[];     // List of sales person names
+  currentUser: string;        // Currently selected sales person
+  goals: Goals;               // Monthly goals
+  focusClients: string[];     // List of focus client names
+}
+
+export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
+  salesPersons: ["岡田"],
+  currentUser: "",
+  goals: { billing: 5000000, profit: 800000, incentive: 350000 },
+  focusClients: [],
+};

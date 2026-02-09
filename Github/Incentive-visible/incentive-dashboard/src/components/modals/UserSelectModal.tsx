@@ -1,19 +1,20 @@
 import React, { useState } from "react";
 import { COLORS } from "../../constants/colors";
-import { SALES_PERSONS, type SalesPerson } from "../../constants/initialData";
 import { STORAGE_KEYS } from "../../hooks/useIncentiveData";
 import { buttonStyle, inputStyle } from "../ui/FormField";
 
 interface UserSelectModalProps {
   isOpen: boolean;
-  onSelect: (user: SalesPerson) => void;
+  onSelect: (user: string) => void;
+  salesPersons: string[];
 }
 
 export const UserSelectModal: React.FC<UserSelectModalProps> = ({
   isOpen,
   onSelect,
+  salesPersons,
 }) => {
-  const [selectedUser, setSelectedUser] = useState<SalesPerson | "">("");
+  const [selectedUser, setSelectedUser] = useState<string>("");
 
   if (!isOpen) return null;
 
@@ -110,14 +111,14 @@ export const UserSelectModal: React.FC<UserSelectModalProps> = ({
           </label>
           <select
             value={selectedUser}
-            onChange={(e) => setSelectedUser(e.target.value as SalesPerson)}
+            onChange={(e) => setSelectedUser(e.target.value)}
             style={{
               ...inputStyle,
               cursor: "pointer",
             }}
           >
             <option value="">選択してください</option>
-            {SALES_PERSONS.map((person) => (
+            {salesPersons.map((person) => (
               <option key={person} value={person}>
                 {person}
               </option>

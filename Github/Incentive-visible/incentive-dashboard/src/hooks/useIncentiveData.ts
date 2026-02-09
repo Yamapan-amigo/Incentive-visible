@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import type { IncentiveEntry, Goals, Stats, ViewMode, MonthlyData } from "../types";
+import type { IncentiveEntry, Goals, Stats, ViewMode, MonthlyData, ProfileSettings } from "../types";
+import { DEFAULT_PROFILE_SETTINGS } from "../types";
 import { INITIAL_DATA, DEFAULT_GOALS } from "../constants/initialData";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
@@ -7,6 +8,7 @@ export const STORAGE_KEYS = {
   DATA: "incentive-data",
   GOALS: "incentive-goals",
   CURRENT_USER: "current-user",
+  PROFILE_SETTINGS: "profile-settings",
 };
 
 // Database row type (snake_case from Supabase)
@@ -77,6 +79,9 @@ export function useIncentiveData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Profile settings state
+  const [profileSettings, setProfileSettingsState] = useState<ProfileSettings>(DEFAULT_PROFILE_SETTINGS);
+
   // Selected sales person filter
   const [selectedSales, setSelectedSales] = useState<string>("all");
 
@@ -139,8 +144,20 @@ export function useIncentiveData() {
     function loadFromLocalStorage() {
       const savedData = localStorage.getItem(STORAGE_KEYS.DATA);
       const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
+      const savedProfileSettings = localStorage.getItem(STORAGE_KEYS.PROFILE_SETTINGS);
+
       setData(savedData ? JSON.parse(savedData) : INITIAL_DATA);
       setGoalsState(savedGoals ? JSON.parse(savedGoals) : DEFAULT_GOALS);
+
+      if (savedProfileSettings) {
+        const parsed = JSON.parse(savedProfileSettings);
+        // Migrate: if profile settings exist, sync goals
+        setProfileSettingsState({
+          ...DEFAULT_PROFILE_SETTINGS,
+          ...parsed,
+          goals: savedGoals ? JSON.parse(savedGoals) : parsed.goals || DEFAULT_GOALS,
+        });
+      }
     }
 
     loadData();
@@ -159,11 +176,21 @@ export function useIncentiveData() {
     }
   }, [goals, loading]);
 
-  // Get unique sales persons
-  const salesPersons = useMemo(
-    () => [...new Set(data.map((d) => d.sales))],
-    [data]
-  );
+  // Save profile settings to localStorage
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEYS.PROFILE_SETTINGS, JSON.stringify(profileSettings));
+    }
+  }, [profileSettings, loading]);
+
+  // Get unique sales persons from profile settings, falling back to data
+  const salesPersons = useMemo(() => {
+    // Use profile settings if available, otherwise extract from data
+    if (profileSettings.salesPersons.length > 0) {
+      return profileSettings.salesPersons;
+    }
+    return [...new Set(data.map((d) => d.sales))];
+  }, [profileSettings.salesPersons, data]);
 
   // Get available years from data
   const availableYears = useMemo(() => {
@@ -355,6 +382,15 @@ export function useIncentiveData() {
     }
   }, []);
 
+  // Update profile settings
+  const setProfileSettings = useCallback((newSettings: ProfileSettings) => {
+    setProfileSettingsState(newSettings);
+    // Sync goals state
+    if (newSettings.goals) {
+      setGoalsState(newSettings.goals);
+    }
+  }, []);
+
   return {
     data,
     filteredData,
@@ -380,5 +416,7 @@ export function useIncentiveData() {
     deleteEntry,
     loading,
     error,
+    profileSettings,
+    setProfileSettings,
   };
 }

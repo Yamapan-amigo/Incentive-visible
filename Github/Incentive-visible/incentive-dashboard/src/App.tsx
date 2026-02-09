@@ -3,7 +3,6 @@ import { COLORS } from "./constants/colors";
 import { fmt, pct } from "./utils/format";
 import { useIncentiveData, STORAGE_KEYS } from "./hooks/useIncentiveData";
 import type { NewEntry, Goals, IncentiveEntry } from "./types";
-import type { SalesPerson } from "./constants/initialData";
 
 // Layout components
 import { CursorGlow } from "./components/layout/CursorGlow";
@@ -34,6 +33,7 @@ import { AddDataModal } from "./components/modals/AddDataModal";
 import { EditDataModal } from "./components/modals/EditDataModal";
 import { GoalModal } from "./components/modals/GoalModal";
 import { UserSelectModal } from "./components/modals/UserSelectModal";
+import { SettingsModal } from "./components/modals/SettingsModal";
 
 import "./styles/animations.css";
 
@@ -58,15 +58,17 @@ function App() {
     addEntry,
     updateEntry,
     deleteEntry,
+    profileSettings,
+    setProfileSettings,
   } = useIncentiveData();
 
   // Current user state (sales person)
-  const [currentUser, setCurrentUser] = useState<SalesPerson | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [showUserSelectModal, setShowUserSelectModal] = useState(false);
 
   // Load current user from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER) as SalesPerson | null;
+    const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (savedUser) {
       setCurrentUser(savedUser);
     } else {
@@ -79,6 +81,7 @@ function App() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<IncentiveEntry | null>(null);
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempGoals, setTempGoals] = useState<Goals>(goals);
   const [newEntry, setNewEntry] = useState<NewEntry>({
     name: "",
@@ -99,7 +102,7 @@ function App() {
   }, [currentUser]);
 
   // Handler for user selection
-  const handleUserSelect = (user: SalesPerson) => {
+  const handleUserSelect = (user: string) => {
     setCurrentUser(user);
     setShowUserSelectModal(false);
   };
@@ -185,6 +188,10 @@ function App() {
     setEditingEntry(null);
   };
 
+  const handleOpenSettingsModal = () => {
+    setShowSettingsModal(true);
+  };
+
   return (
     <div
       style={{
@@ -264,6 +271,7 @@ function App() {
         onSelectSales={setSelectedSales}
         onOpenGoalModal={handleOpenGoalModal}
         onOpenAddModal={() => setShowAddModal(true)}
+        onOpenSettingsModal={handleOpenSettingsModal}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         selectedYear={selectedYear}
@@ -460,6 +468,7 @@ function App() {
       <UserSelectModal
         isOpen={showUserSelectModal}
         onSelect={handleUserSelect}
+        salesPersons={salesPersons}
       />
 
       <AddDataModal
@@ -483,6 +492,13 @@ function App() {
         onClose={handleCloseEditModal}
         entry={editingEntry}
         onSave={updateEntry}
+      />
+
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        profileSettings={profileSettings}
+        onSave={setProfileSettings}
       />
     </div>
   );

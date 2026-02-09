@@ -9,6 +9,7 @@ interface HeaderProps {
   onSelectSales: (sales: string) => void;
   onOpenGoalModal: () => void;
   onOpenAddModal: () => void;
+  onOpenSettingsModal: () => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   selectedYear: string;
@@ -34,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSales,
   onOpenGoalModal,
   onOpenAddModal,
+  onOpenSettingsModal,
   viewMode,
   onViewModeChange,
   selectedYear,
@@ -231,6 +233,25 @@ export const Header: React.FC<HeaderProps> = ({
             }}
           >
             🎯 目標設定
+          </button>
+
+          {/* Settings button */}
+          <button
+            onClick={onOpenSettingsModal}
+            style={{
+              padding: "7px 14px",
+              fontSize: 12,
+              fontWeight: 600,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 12,
+              cursor: "pointer",
+              background: COLORS.card,
+              color: COLORS.textMuted,
+              fontFamily: "inherit",
+              transition: "all 0.2s",
+            }}
+          >
+            設定
           </button>
 
           {/* Add data button */}
