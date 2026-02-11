@@ -86,8 +86,8 @@ export function useIncentiveData() {
   // Selected sales person filter
   const [selectedSales, setSelectedSales] = useState<string>("all");
 
-  // View mode: monthly or yearly
-  const [viewMode, setViewMode] = useState<ViewMode>("yearly");
+  // View mode: monthly or yearly (default to monthly)
+  const [viewMode, setViewMode] = useState<ViewMode>("monthly");
 
   // Selected year (YYYY format)
   const [selectedYear, setSelectedYear] = useState<string>(getCurrentYear());
