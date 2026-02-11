@@ -9,7 +9,7 @@ import {
   FONTS,
   ANIMATION_DELAYS,
 } from "../../constants/styles";
-import { fmt } from "../../utils/format";
+import { fmt, calculateIncentive } from "../../utils/format";
 import type { IncentiveEntry } from "../../types";
 
 interface MonthlyIncentiveTableProps {
@@ -62,8 +62,9 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = memo(
   data,
 }) => {
   // Group data by month and calculate totals
+  // Incentive is calculated based on monthly profit: (profit - 500,000) * 15%
   const monthlyData: MonthlyData[] = useMemo(() => {
-    const monthMap = new Map<string, MonthlyData>();
+    const monthMap = new Map<string, Omit<MonthlyData, "incentive">>();
 
     data.forEach((entry) => {
       const existing = monthMap.get(entry.month);
@@ -71,7 +72,6 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = memo(
         existing.billing += entry.billing;
         existing.cost += entry.cost;
         existing.profit += entry.billing - entry.cost;
-        existing.incentive += entry.incentiveTarget;
       } else {
         const [year, month] = entry.month.split("-");
         monthMap.set(entry.month, {
@@ -80,15 +80,17 @@ export const MonthlyIncentiveTable: React.FC<MonthlyIncentiveTableProps> = memo(
           billing: entry.billing,
           cost: entry.cost,
           profit: entry.billing - entry.cost,
-          incentive: entry.incentiveTarget,
         });
       }
     });
 
-    // Sort by month
-    return Array.from(monthMap.values()).sort((a, b) =>
-      a.month.localeCompare(b.month)
-    );
+    // Sort by month and calculate incentive based on profit
+    return Array.from(monthMap.values())
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .map((m) => ({
+        ...m,
+        incentive: calculateIncentive(m.profit),
+      }));
   }, [data]);
 
   // Calculate yearly total

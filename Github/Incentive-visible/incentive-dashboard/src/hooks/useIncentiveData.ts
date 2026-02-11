@@ -3,6 +3,7 @@ import type { IncentiveEntry, Goals, Stats, ViewMode, MonthlyData, ProfileSettin
 import { DEFAULT_PROFILE_SETTINGS } from "../types";
 import { INITIAL_DATA, DEFAULT_GOALS } from "../constants/initialData";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { calculateIncentive } from "../utils/format";
 
 export const STORAGE_KEYS = {
   DATA: "incentive-data",
@@ -247,14 +248,13 @@ export function useIncentiveData() {
   );
 
   // Calculate statistics for current view
+  // Incentive is calculated based on profit: (profit - 500,000) * 15%
   const stats = useMemo<Stats>(() => {
     const totalBilling = filteredData.reduce((a, d) => a + d.billing, 0);
     const totalCost = filteredData.reduce((a, d) => a + d.cost, 0);
     const totalProfit = totalBilling - totalCost;
-    const totalIncentive = filteredData.reduce(
-      (a, d) => a + d.incentiveTarget,
-      0
-    );
+    // Calculate incentive based on profit, not from stored incentiveTarget
+    const totalIncentive = calculateIncentive(totalProfit);
     const avgMargin = totalBilling > 0 ? totalProfit / totalBilling : 0;
 
     return {
@@ -268,12 +268,24 @@ export function useIncentiveData() {
   }, [filteredData]);
 
   // Calculate yearly stats (always for the selected year)
+  // For yearly stats, calculate incentive per month and sum them
   const yearlyStats = useMemo<Stats>(() => {
     const yearData = yearFilteredData;
     const totalBilling = yearData.reduce((a, d) => a + d.billing, 0);
     const totalCost = yearData.reduce((a, d) => a + d.cost, 0);
     const totalProfit = totalBilling - totalCost;
-    const totalIncentive = yearData.reduce((a, d) => a + d.incentiveTarget, 0);
+
+    // Group by month and calculate incentive per month, then sum
+    const monthlyProfits = new Map<string, number>();
+    yearData.forEach((d) => {
+      const profit = d.billing - d.cost;
+      monthlyProfits.set(d.month, (monthlyProfits.get(d.month) || 0) + profit);
+    });
+    const totalIncentive = Array.from(monthlyProfits.values()).reduce(
+      (sum, monthProfit) => sum + calculateIncentive(monthProfit),
+      0
+    );
+
     const avgMargin = totalBilling > 0 ? totalProfit / totalBilling : 0;
 
     return {
@@ -295,14 +307,16 @@ export function useIncentiveData() {
       const monthData = salesFilteredData.filter((d) => d.month === month);
       const billing = monthData.reduce((a, d) => a + d.billing, 0);
       const cost = monthData.reduce((a, d) => a + d.cost, 0);
+      const profit = billing - cost;
 
       return {
         month,
         monthLabel: monthLabels[index],
         billing,
         cost,
-        profit: billing - cost,
-        incentive: monthData.reduce((a, d) => a + d.incentiveTarget, 0),
+        profit,
+        // Calculate incentive based on monthly profit
+        incentive: calculateIncentive(profit),
         count: monthData.length,
       };
     });

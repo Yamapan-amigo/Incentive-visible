@@ -9,7 +9,7 @@ import {
   FONTS,
   ANIMATION_DELAYS,
 } from "../../constants/styles";
-import { fmt, pct, getMarginColor } from "../../utils/format";
+import { fmt, pct, getMarginColor, calculateIncentive } from "../../utils/format";
 import type { IncentiveEntry } from "../../types";
 
 interface StaffYearlySummaryProps {
@@ -58,43 +58,52 @@ export const StaffYearlySummary: React.FC<StaffYearlySummaryProps> = memo(({
   selectedYear,
 }) => {
   // Aggregate data by staff member
+  // Incentive is calculated per month based on that month's profit
   const staffSummaries: StaffSummary[] = useMemo(() => {
-    const staffMap = new Map<string, {
-      billing: number;
-      cost: number;
-      incentive: number;
-      months: Set<string>;
-    }>();
+    // First, group by staff and month to calculate per-month profit
+    const staffMonthMap = new Map<string, Map<string, { billing: number; cost: number }>>();
 
     data.forEach((entry) => {
-      const existing = staffMap.get(entry.name);
+      if (!staffMonthMap.has(entry.name)) {
+        staffMonthMap.set(entry.name, new Map());
+      }
+      const monthMap = staffMonthMap.get(entry.name)!;
+      const existing = monthMap.get(entry.month);
       if (existing) {
         existing.billing += entry.billing;
         existing.cost += entry.cost;
-        existing.incentive += entry.incentiveTarget;
-        existing.months.add(entry.month);
       } else {
-        staffMap.set(entry.name, {
+        monthMap.set(entry.month, {
           billing: entry.billing,
           cost: entry.cost,
-          incentive: entry.incentiveTarget,
-          months: new Set([entry.month]),
         });
       }
     });
 
     // Convert to array and calculate derived values
-    const summaries: StaffSummary[] = Array.from(staffMap.entries()).map(
-      ([name, data]) => {
-        const profit = data.billing - data.cost;
+    const summaries: StaffSummary[] = Array.from(staffMonthMap.entries()).map(
+      ([name, monthMap]) => {
+        let totalBilling = 0;
+        let totalCost = 0;
+        let totalIncentive = 0;
+
+        // Calculate incentive per month based on that month's profit
+        monthMap.forEach(({ billing, cost }) => {
+          totalBilling += billing;
+          totalCost += cost;
+          const monthProfit = billing - cost;
+          totalIncentive += calculateIncentive(monthProfit);
+        });
+
+        const totalProfit = totalBilling - totalCost;
         return {
           name,
-          totalBilling: data.billing,
-          totalCost: data.cost,
-          totalProfit: profit,
-          avgMargin: data.billing > 0 ? profit / data.billing : 0,
-          totalIncentive: data.incentive,
-          monthCount: data.months.size,
+          totalBilling,
+          totalCost,
+          totalProfit,
+          avgMargin: totalBilling > 0 ? totalProfit / totalBilling : 0,
+          totalIncentive,
+          monthCount: monthMap.size,
         };
       }
     );
