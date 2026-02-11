@@ -164,6 +164,11 @@ Examples:
         type=str,
         help="Comma-separated list of participants"
     )
+    parser.add_argument(
+        "--video-url",
+        type=str,
+        help="Video recording URL to include in minutes"
+    )
 
     # Output options
     parser.add_argument(
@@ -300,7 +305,8 @@ Examples:
     minutes = generator.generate(
         transcript=transcript,
         date=date,
-        participants=args.participants
+        participants=args.participants,
+        video_url=args.video_url
     )
 
     print("Minutes generated successfully!")

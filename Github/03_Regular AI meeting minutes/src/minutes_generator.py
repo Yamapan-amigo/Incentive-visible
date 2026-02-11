@@ -97,6 +97,7 @@ class MinutesGenerator:
         transcript: str,
         date: Optional[str] = None,
         participants: Optional[str] = None,
+        video_url: Optional[str] = None,
     ) -> str:
         """
         Generate meeting minutes from transcript.
@@ -105,6 +106,7 @@ class MinutesGenerator:
             transcript: The meeting transcript text
             date: Meeting date (optional, defaults to today)
             participants: Comma-separated list of participants (optional)
+            video_url: Video recording URL (optional)
 
         Returns:
             Generated meeting minutes as markdown
@@ -126,6 +128,8 @@ class MinutesGenerator:
             prompt = prompt.replace("{participants}", participants or "（自動検出）")
         if "{transcript}" in prompt:
             prompt = prompt.replace("{transcript}", transcript)
+        if "{video_url}" in prompt:
+            prompt = prompt.replace("{video_url}", video_url or "（未設定）")
 
         # Insert date info if not in template
         if "【基本情報】" in prompt and date:
