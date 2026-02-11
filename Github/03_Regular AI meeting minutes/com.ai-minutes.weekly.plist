@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ai-minutes.weekly</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Replace with your Python path: /path/to/venv/bin/python -->
+        <string>/path/to/venv/bin/python</string>
+        <!-- Replace with your script path -->
+        <string>/path/to/src/main.py</string>
+        <string>--auto</string>
+    </array>
+
+    <!-- Every Tuesday at 20:30 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>2</integer>
+        <key>Hour</key>
+        <integer>20</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- Replace with your project path -->
+    <key>WorkingDirectory</key>
+    <string>/path/to/project</string>
+
+    <!-- Replace with your output path -->
+    <key>StandardOutPath</key>
+    <string>/path/to/output/launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/path/to/output/launchd_error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
