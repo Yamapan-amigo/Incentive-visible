@@ -9,6 +9,7 @@ interface KPICardProps {
   gradient: string;
   icon: string;
   delay: number;
+  labelStyle?: React.CSSProperties;
 }
 
 export const KPICard: React.FC<KPICardProps> = memo(({
@@ -18,6 +19,7 @@ export const KPICard: React.FC<KPICardProps> = memo(({
   gradient,
   icon,
   delay,
+  labelStyle,
 }) => {
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.currentTarget.style.transform = "translateY(-3px)";
@@ -73,6 +75,7 @@ export const KPICard: React.FC<KPICardProps> = memo(({
               color: COLORS.textMuted,
               letterSpacing: "0.08em",
               marginBottom: 8,
+              ...labelStyle,
             }}
           >
             {label}

@@ -4,6 +4,18 @@ import { FormField } from "../ui/FormField";
 import { inputStyle, buttonStyle } from "../ui/formStyles";
 import type { NewEntry } from "../../types";
 
+// Format number with commas
+const formatWithCommas = (value: string): string => {
+  const num = value.replace(/[^\d]/g, "");
+  if (!num) return "";
+  return Number(num).toLocaleString();
+};
+
+// Remove commas from formatted string
+const removeCommas = (value: string): string => {
+  return value.replace(/,/g, "");
+};
+
 interface AddDataModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +35,13 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setNewEntry((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const updateNumericField = (field: keyof NewEntry) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const rawValue = removeCommas(e.target.value);
+    setNewEntry((prev) => ({ ...prev, [field]: rawValue }));
   };
 
   return (
@@ -70,28 +89,31 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
         <FormField label="売上（単価）">
           <input
             style={inputStyle}
-            type="number"
-            value={newEntry.billing}
-            onChange={updateField("billing")}
-            placeholder="650000"
+            type="text"
+            inputMode="numeric"
+            value={formatWithCommas(newEntry.billing)}
+            onChange={updateNumericField("billing")}
+            placeholder="650,000"
           />
         </FormField>
         <FormField label="仕入（原価）">
           <input
             style={inputStyle}
-            type="number"
-            value={newEntry.cost}
-            onChange={updateField("cost")}
-            placeholder="500000"
+            type="text"
+            inputMode="numeric"
+            value={formatWithCommas(newEntry.cost)}
+            onChange={updateNumericField("cost")}
+            placeholder="500,000"
           />
         </FormField>
         <FormField label="インセン対象">
           <input
             style={inputStyle}
-            type="number"
-            value={newEntry.incentiveTarget}
-            onChange={updateField("incentiveTarget")}
-            placeholder="50000"
+            type="text"
+            inputMode="numeric"
+            value={formatWithCommas(newEntry.incentiveTarget)}
+            onChange={updateNumericField("incentiveTarget")}
+            placeholder="50,000"
           />
         </FormField>
       </div>

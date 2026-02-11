@@ -332,10 +332,14 @@ function App() {
           <KPICard
             label="インセンティブ対象"
             value={fmt(stats.totalIncentive)}
-            sub={`粗利の ${stats.totalProfit > 0 ? pct(stats.totalIncentive / stats.totalProfit) : "—"}`}
             gradient={COLORS.gradNebula}
             icon="💫"
             delay={0.15}
+            labelStyle={{
+              color: "#dc2626",
+              fontWeight: 800,
+              fontSize: 14,
+            }}
           />
         </div>
 
