@@ -10,13 +10,13 @@ export const fmt = (n: number): string => `¥${n.toLocaleString()}`;
 // Incentive calculation constants
 export const INCENTIVE_CONFIG = {
   BASE_PROFIT: 500000,    // Base profit threshold (50万円)
-  RATE: 0.15,             // 15% of excess profit
+  RATE: 0.20,             // 20% of excess profit
 } as const;
 
 /**
  * Calculate incentive based on profit
  * Formula: max(0, (profit - BASE_PROFIT)) * RATE
- * Example: profit = 1,000,000 => (1,000,000 - 500,000) * 0.15 = 75,000
+ * Example: profit = 1,000,000 => (1,000,000 - 500,000) * 0.20 = 100,000
  */
 export const calculateIncentive = (profit: number): number => {
   const excessProfit = profit - INCENTIVE_CONFIG.BASE_PROFIT;
